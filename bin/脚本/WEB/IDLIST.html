@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ID文件列表</title>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, 
+                                     initial-scale=1.0, 
+                                     maximum-scale=1.0,user-scalable=no">
+
+</head>
+
+<body>
+    <script type="application/javascript" src="./js/jquery.js"></script>
+    <script type="application/javascript" src="./js/bootstrap.min.js"></script>
+    <script type="application/javascript">
+        function test() {
+            $.get("http://85.32.80.190:8082/msra/getFileList", function (data, status) {
+                $("#resTabBody").html("");
+                for (var i = 0, len = data.length; i < len; i++) {
+                    //alert(data[i].aduser);
+                    var tr = "<tr>";
+                    tr += "<td>" + data[i].hostname + "</td>";
+                    tr += "<td>" + data[i].aduser + "</td>";
+                    tr += "<td><a href='" + data[i].downloadUrl + "'>点击下载</td>";
+                    tr += "<td>" + data[i].randomCode + "</td>";
+                    tr += "</tr>";
+                    $("#resTabBody").append(tr);
+                }
+            });
+        }
+    </script>
+    <div>
+        <button onclick="test()">刷新</button>
+    </div>
+
+    <table id="resTable" class="table">
+        <thead>
+            <tr>
+                <th>机器名</th>
+                <th>AD用户</th>
+                <th>ID文件下载链接</th>
+                <th>验证码</th>
+            </tr>
+        </thead>
+        <tbody id="resTabBody">
+
+        </tbody>
+    </table>
+
+</body>
+
+</html>

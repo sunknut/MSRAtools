@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width,
+                                     initial-scale=1.0,
+                                     maximum-scale=1.0,user-scalable=no">
+
+    <script type="application/javascript" src="./js/jquery.js"></script>
+    <script type="application/javascript" src="./js/bootstrap.min.js"></script>
+</head>
+
+
+<body>
+    <script type="text/javascript">
+        function runMsra() {
+            closeMsra();
+            var shell = new ActiveXObject("WScript.Shell");
+            var fso = new ActiveXObject("Scripting.FileSystemObject");
+            var tempPath = shell.SpecialFolders("Templates");
+            var ADuser = shell.ExpandEnvironmentStrings("%COMPUTERNAME%");
+            var hostname = shell.ExpandEnvironmentStrings("%USERNAME%");
+            var password = "1234" + getRandom(1000, 9999);
+            var randomCode = getCode(6);
+            filepath = tempPath + "\\" + ADuser + ".msrcIncident";
+            cleanMsrid(filepath);
+            console.log(filepath);
+            shell.run("msra.exe /saveasfile " + filepath + " " + password, 1);
+            var bi = 0;
+            console.log(bi);
+            while (true) {
+                bi++;
+                if (fso.FileExists(filepath)) {
+                    break;
+                }
+                if (bi >= 100000) {
+                    break;
+                }
+            }
+            content = getContent(filepath);
+            var httpRequest = new XMLHttpRequest(); //第一步：创建需要的对象
+            httpRequest.open('POST', '/msra/uploadmsra', true); //第二步：打开连接
+            httpRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded"); //设置请求头
+            var data = "msraxml=" + content + "&aduser=" + ADuser + "&hostname=" + hostname + "&password=" + password +
+                "&randomcode=" + randomCode;
+            httpRequest.send(data); //发送请求
+            /**
+             * 获取数据后的处理程序
+             */
+            httpRequest.onreadystatechange = function () { //请求后的回调接口，可将请求成功后要执行的程序写在其中
+                if (httpRequest.readyState == 4 && httpRequest.status == 200) { //验证请求是否发送成功
+                    var json = httpRequest.responseText; //获取到服务端返回的数据
+                    console.log(json);
+                }
+            };
+
+        }
+
+        function setRegConfig() {
+            var shell = new ActiveXObject("WScript.Shell");
+            shell.RegWrite(
+                "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1406",
+                "0", "REG_DWORD")
+            shell.RegWrite(
+                "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1201",
+                "0", "REG_DWORD")
+            shell.RegWrite(
+                "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance\\fAllowFullControl", "1",
+                "REG_DWORD");
+            shell.RegWrite("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance\\fAllowToGetHelp",
+                "1", "REG_DWORD");
+        }
+
+        function cleanMsrid(path) {
+            var fso = new ActiveXObject("Scripting.FileSystemObject");
+            //创建FileSystemObject对象fso
+            if (fso.FileExists(path)) {
+                try {
+
+                    fso.DeleteFile(path);
+                } catch (e) {
+                    alert("*.*" + e.message);
+                }
+            }
+        }
+
+        function getRandom(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function getCode(length) {
+            let code = '';
+            for (var i = 0; i < length; i++) {
+                var type = getRandom(1, 2);
+                switch (type) {
+                    case 1:
+                        code += String.fromCharCode(getRandom(48, 57)); //数字
+                        break;
+                    case 2:
+                        code += String.fromCharCode(getRandom(65, 90)); //大写字母
+                        break;
+                }
+            }
+            return code;
+        }
+
+        function getContent(path) {
+            return adoLoadText(path, "utf-8")
+        }
+
+        function adoLoadText(filename, charset) {
+            var stream, text;
+            stream = new ActiveXObject("ADODB.Stream");
+            stream.type = 2;
+            stream.charset = charset;
+            stream.open();
+            stream.loadFromFile(filename);
+            text = stream.readText(-1);
+            stream.close();
+            return text;
+        }
+
+        function closeMsra() {
+            var shell = new ActiveXObject("WScript.Shell");
+            shell.run("taskkill /f /t /im msra.exe", 0, true);
+        }
+    </script>
+    <div style="display: none" id="uddiv">
+        <a href="/IESETTING/OneKeySetting.exe">初次使用，请点击本连接下载配置脚本,配置完成后重新IE再访问本系统。</a>
+    </div>
+    <div style="display: none" id="ddiv">
+        <button onclick="runMsra()">发起请求</button>
+        <button onclick="closeMsra()">重置</button>
+    </div>
+
+</body>
+<script type="text/javascript">
+    function CheckActiveX() {
+        try {
+            var test = new ActiveXObject("WScript.Shell");
+            $("#ddiv").show();
+            setRegConfig();
+            cleanMsrid();
+        } catch (e) {
+            $("#uddiv").show();
+            return;
+        } //在这里写加载你自己ACTIVEX的代码'未将本站点添加到信任站点！'}LoadActiveX();
+    }
+    CheckActiveX();
+</script>
+
+</html>
